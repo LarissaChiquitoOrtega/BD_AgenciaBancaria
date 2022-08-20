@@ -1,0 +1,345 @@
+/* criação do database */
+--CREATE DATABASE agencia_bancaria;
+
+/* criação das tabelas e suas respectivas primary keys*/
+
+--pais
+CREATE TABLE pais (
+	id SERIAL NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--estado
+CREATE TABLE estado (
+	id SERIAL NOT NULL,
+    cod_ibge INTEGER NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    sigla_UF VARCHAR(2) NOT NULL,
+    pais_id INTEGER NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--cidade
+CREATE TABLE cidade (
+	id SERIAL NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    estado_id INTEGER NOT NULL,
+    PRIMARY KEY (id)
+);	
+
+--cep
+CREATE TABLE cep(
+	id SERIAL NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--tipo_logradouro
+CREATE TABLE tipo_logradouro(
+	id SERIAL NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--endereco
+CREATE TABLE endereco(
+	id SERIAL NOT NULL,
+    logradouro VARCHAR(255) NOT NULL,
+    numero INTEGER NOT NULL,
+    complemento VARCHAR(255) NULL,
+    tipo_logradouro_id INTEGER NOT NULL,
+    cep_id INTEGER NOT NULL,
+    cidade_id INTEGER NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--tipo_contato
+CREATE TABLE tipo_contato(
+	id SERIAL NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--agencia
+CREATE TABLE agencia(
+	id SERIAL NOT NULL,
+    codigo_ag VARCHAR(5) NOT NULL,
+    endereco_id INTEGER NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--agencia_contato
+CREATE TABLE agencia_contato(
+	id SERIAL NOT NULL,
+    contato VARCHAR(255) NOT NULL,
+    agencia_id INTEGER NOT NULL,
+    tipo_contato_id INTEGER NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--cliente
+CREATE TABLE cliente(
+	id SERIAL NOT NULL,
+    cpf VARCHAR(11) NOT NULL,
+    nome VARCHAR(255) NOT NULL,
+    data_nascimento DATE NOT NULL,
+    endereco_id INTEGER NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--cliente_contato
+CREATE TABLE cliente_contato(
+	id SERIAL NOT NULL,
+    contato VARCHAR(255) NOT NULL,
+    cliente_id INTEGER NOT NULL,
+    tipo_contato_id INTEGER NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--tipo_conta
+CREATE TABLE tipo_conta(
+	id SERIAL NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--conta
+CREATE TABLE conta(
+	id SERIAL NOT NULL,
+    codigo_conta VARCHAR(8) NOT NULL,
+    agencia_id INTEGER NOT NULL,
+    tipo_conta_id INTEGER NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--conta_cliente
+CREATE TABLE conta_cliente(
+	id SERIAL NOT NULL,
+	cliente_id INTEGER NOT NULL,
+    conta_id INTEGER NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--tipo_transacao
+CREATE TABLE tipo_transacao(
+	id SERIAL NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id)
+);
+
+--transacao
+CREATE TABLE transacao(
+	id SERIAL NOT NULL,
+    data_hora TIMESTAMP NOT NULL,
+    valor NUMERIC(18, 2) NOT NULL,
+    conta_id INTEGER NOT NULL,
+    tipo_transacao_id INTEGER NOT NULL,
+    PRIMARY KEY (id)
+);
+
+/* criação das constraints*/
+--pais - não possui foreign key
+--estado
+ALTER TABLE estado
+	ADD CONSTRAINT fk_pais
+	FOREIGN KEY (pais_id) REFERENCES pais(id);
+	
+--cidade
+ALTER TABLE cidade
+	ADD CONSTRAINT estado_fk
+	FOREIGN KEY (estado_id) REFERENCES estado(id);
+	
+--cep - não possui foreign key
+--tipo_logradouro - não possui foreign key
+--endereco
+ALTER TABLE endereco
+	ADD CONSTRAINT tipo_logradouro_fk
+	FOREIGN KEY (tipo_logradouro_id) REFERENCES tipo_logradouro(id);
+	
+ALTER TABLE endereco
+	ADD CONSTRAINT cep_fk
+	FOREIGN KEY (cep_id) REFERENCES cep(id);	
+	
+ALTER TABLE endereco
+	ADD CONSTRAINT cidade_fk
+	FOREIGN KEY (cidade_id) REFERENCES cidade(id);	
+	
+--tipo_contato - não possui foreign key
+--agencia
+ALTER TABLE agencia
+	ADD CONSTRAINT endereco_fk
+	FOREIGN KEY (endereco_id) REFERENCES endereco(id);	
+	
+--agencia_contato
+ALTER TABLE agencia_contato
+	ADD CONSTRAINT agencia_fk
+	FOREIGN KEY (agencia_id) REFERENCES agencia(id);	
+
+ALTER TABLE agencia_contato
+	ADD CONSTRAINT tipo_contato_fk
+	FOREIGN KEY (tipo_contato_id) REFERENCES tipo_contato(id);	
+	
+--cliente
+ALTER TABLE cliente
+	ADD CONSTRAINT endereco_fk
+	FOREIGN KEY (endereco_id) REFERENCES endereco(id);	
+	
+--cliente_contato
+ALTER TABLE cliente_contato
+	ADD CONSTRAINT cliente_fk
+	FOREIGN KEY (cliente_id) REFERENCES cliente(id);	
+
+ALTER TABLE cliente_contato
+	ADD CONSTRAINT tipo_contato_fk
+	FOREIGN KEY (tipo_contato_id) REFERENCES tipo_contato(id);	
+
+--tipo_conta - não possui foreign key
+--conta
+ALTER TABLE conta
+	ADD CONSTRAINT agencia_fk
+	FOREIGN KEY (agencia_id) REFERENCES agencia(id);
+	
+ALTER TABLE conta
+	ADD CONSTRAINT tipo_conta_fk
+	FOREIGN KEY (tipo_conta_id) REFERENCES tipo_conta(id);
+
+--conta_cliente
+ALTER TABLE conta_cliente
+	ADD CONSTRAINT cliente_fk
+	FOREIGN KEY (cliente_id) REFERENCES cliente(id);
+	
+ALTER TABLE conta_cliente
+	ADD CONSTRAINT conta_fk
+	FOREIGN KEY (conta_id) REFERENCES conta(id);
+
+--tipo_transacao - não possui foreign key
+--transacao
+ALTER TABLE transacao
+	ADD CONSTRAINT conta_fk
+	FOREIGN KEY (conta_id) REFERENCES conta(id);
+	
+ALTER TABLE transacao
+	ADD CONSTRAINT tipo_transacao_fk
+	FOREIGN KEY (tipo_transacao_id) REFERENCES tipo_transacao(id);
+
+/* DML */
+BEGIN TRANSACTION;
+--pais
+INSERT INTO pais (descricao) VALUES ('Brasil');
+--estado
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (11, 'Rondônia', 'RO', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (12, 'Acre', 'AC', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (13, 'Amazonas', 'AM', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (14, 'Roraima', 'RR', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (15, 'Pará', 'PA', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (16, 'Amapá', 'AP', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (17, 'Tocantins', 'TO', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (21, 'Maranhão', 'MA', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (22, 'Piauí', 'PI', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (23, 'Ceará', 'CE', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (24, 'Rio Grande do Norte', 'RN', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (25, 'Paraíba', 'PB', 1);
+INSERT INTO estado (cod_ibge, descricao, sigla_UF, pais_id) VALUES (35, 'São Paulo', 'SP', 1);
+--cidade
+INSERT INTO cidade (descricao, estado_id) VALUES ('Manaus', 3);
+INSERT INTO cidade (descricao, estado_id) VALUES ('Parintins', 3);
+INSERT INTO cidade (descricao, estado_id) VALUES ('Maués', 3);
+INSERT INTO cidade (descricao, estado_id) VALUES ('Careiro', 3);
+INSERT INTO cidade (descricao, estado_id) VALUES ('Porto Velho', 1);
+INSERT INTO cidade (descricao, estado_id) VALUES ('Vilhena', 1);
+INSERT INTO cidade (descricao, estado_id) VALUES ('Cacoal', 1);
+INSERT INTO cidade (descricao, estado_id) VALUES ('Buritis', 1);
+INSERT INTO cidade (descricao, estado_id) VALUES ('São Paulo', 13);
+
+-- tipo_logradouro
+INSERT INTO tipo_logradouro (descricao) VALUES ('Rua');
+INSERT INTO tipo_logradouro (descricao) VALUES ('Avenida');
+INSERT INTO tipo_logradouro (descricao) VALUES ('Rodovia');
+
+-- tipo_contato
+INSERT INTO tipo_contato (descricao) VALUES ('telefone fixo');
+INSERT INTO tipo_contato (descricao) VALUES ('email');
+
+--tipo_conta
+INSERT INTO tipo_conta (descricao) VALUES ('corrente');
+INSERT INTO tipo_conta (descricao) VALUES ('poupança');
+COMMIT TRANSACTION;
+
+-- 5 agencias
+BEGIN TRANSACTION;
+INSERT INTO cep (descricao) VALUES ('16015291');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Baguaçu', 282, null, 2, 1, 9);
+INSERT INTO agencia (codigo_ag, endereco_id) VALUES ('00011', 1);
+INSERT INTO agencia_contato (contato, agencia_id, tipo_contato_id) VALUES ('1839770220', 1, 1);
+COMMIT TRANSACTION;
+
+BEGIN TRANSACTION;
+INSERT INTO cep (descricao) VALUES ('16015292');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Campo Redondo', 111, null, 1, 2, 1);
+INSERT INTO agencia (codigo_ag, endereco_id) VALUES ('00012', 2);
+INSERT INTO agencia_contato (contato, agencia_id, tipo_contato_id) VALUES ('1839770226', 2, 1);
+COMMIT TRANSACTION;
+
+BEGIN TRANSACTION;
+INSERT INTO cep (descricao) VALUES ('16015293');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Santos Dumont', 333, 'km 3', 3, 3, 2);
+INSERT INTO agencia (codigo_ag, endereco_id) VALUES ('00013', 3);	 
+INSERT INTO agencia_contato (contato, agencia_id, tipo_contato_id) VALUES ('1839770126', 3, 1);
+COMMIT TRANSACTION;
+
+BEGIN TRANSACTION;
+INSERT INTO cep (descricao) VALUES ('16015294');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Frei Manuel da Ressurreição', 453, null, 1, 4, 9);
+INSERT INTO agencia (codigo_ag, endereco_id) VALUES ('00014', 4);	 	
+INSERT INTO agencia_contato (contato, agencia_id, tipo_contato_id) VALUES ('1834770126', 4, 1);
+COMMIT TRANSACTION;
+
+BEGIN TRANSACTION;
+INSERT INTO cep (descricao) VALUES ('16015295');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Paraíso', 111, null, 1, 5, 4);
+INSERT INTO agencia (codigo_ag, endereco_id) VALUES ('00015', 5);	 
+INSERT INTO agencia_contato (contato, agencia_id, tipo_contato_id) VALUES ('1839770156', 5, 1);
+COMMIT TRANSACTION;
+
+-- 50 contas
+BEGIN TRANSACTION;
+INSERT INTO conta (codigo_conta, agencia_id, tipo_conta_id) VALUES ('11111111', 1, 1);	 
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Frei Manuel da Ressurreição', 1, null, 1, 4, 9);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111111', 'Larissa Ortega', '1994-09-15', 6);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1939770156', 1, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (1,1);
+COMMIT TRANSACTION;
+
+BEGIN TRANSACTION;
+INSERT INTO conta (codigo_conta, agencia_id, tipo_conta_id) VALUES ('22222222', 1, 1);	 
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Fernandópolis', 2, null, 1, 1, 2);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111112', 'Marcelo Pastana', '1992-02-22', 7);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1939770221', 2, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (2,2);
+COMMIT TRANSACTION;
+
+BEGIN TRANSACTION;
+INSERT INTO conta (codigo_conta, agencia_id, tipo_conta_id) VALUES ('33333333', 2, 1);	 
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Racionais', 1, null, 1, 1, 8);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111113', 'Larissa Albanez', '1995-09-15', 8);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1938770156', 3, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (3,3);
+COMMIT TRANSACTION;
+
+BEGIN TRANSACTION;
+INSERT INTO conta (codigo_conta, agencia_id, tipo_conta_id) VALUES ('11111111', 1, 1);	 
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Frei Manuel da Ressurreição', 1, null, 1, 4, 9);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111114', 'Joana', '1994-09-10', 9);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1939770156', 1, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (4,4);
+COMMIT TRANSACTION;
