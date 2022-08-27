@@ -1,7 +1,7 @@
 /* criação do database */
---CREATE DATABASE agencia_bancaria;
+CREATE DATABASE agencia_bancaria;
 
-/* criação das tabelas e suas respectivas primary keys*/
+/* criação das tabelas e suas respectivas primary keys e unique*/
 
 --pais
 CREATE TABLE pais (
@@ -64,7 +64,8 @@ CREATE TABLE tipo_contato(
 --agencia
 CREATE TABLE agencia(
 	id SERIAL NOT NULL,
-    codigo_ag VARCHAR(5) NOT NULL,
+	nome VARCHAR(255) NOT NULL,
+    numero VARCHAR(5) NOT NULL,
     endereco_id INTEGER NOT NULL,
     PRIMARY KEY (id)
 );
@@ -107,7 +108,8 @@ CREATE TABLE tipo_conta(
 --conta
 CREATE TABLE conta(
 	id SERIAL NOT NULL,
-    codigo_conta VARCHAR(8) NOT NULL,
+    numero VARCHAR(8) NOT NULL,
+	digito CHAR(1) NOT NULL,
     agencia_id INTEGER NOT NULL,
     tipo_conta_id INTEGER NOT NULL,
     PRIMARY KEY (id)
@@ -135,6 +137,7 @@ CREATE TABLE transacao(
     valor NUMERIC(18, 2) NOT NULL,
     conta_id INTEGER NOT NULL,
     tipo_transacao_id INTEGER NOT NULL,
+	transacao_origem_id INTEGER NULL,
     PRIMARY KEY (id)
 );
 
@@ -184,6 +187,9 @@ ALTER TABLE agencia_contato
 ALTER TABLE cliente
 	ADD CONSTRAINT endereco_fk
 	FOREIGN KEY (endereco_id) REFERENCES endereco(id);	
+
+ALTER TABLE cliente
+	ADD CONSTRAINT cu_cpf UNIQUE (cpf);
 	
 --cliente_contato
 ALTER TABLE cliente_contato
@@ -204,6 +210,9 @@ ALTER TABLE conta
 	ADD CONSTRAINT tipo_conta_fk
 	FOREIGN KEY (tipo_conta_id) REFERENCES tipo_conta(id);
 
+ALTER TABLE conta
+	ADD CONSTRAINT cu__ag_conta UNIQUE (agencia_id, numero, digito);
+
 --conta_cliente
 ALTER TABLE conta_cliente
 	ADD CONSTRAINT cliente_fk
@@ -223,7 +232,12 @@ ALTER TABLE transacao
 	ADD CONSTRAINT tipo_transacao_fk
 	FOREIGN KEY (tipo_transacao_id) REFERENCES tipo_transacao(id);
 
+ALTER TABLE transacao
+	ADD CONSTRAINT transacao_origem_fk
+	FOREIGN KEY (transacao_origem_id) REFERENCES transacao(id);
+
 /* DML */
+
 BEGIN TRANSACTION;
 --pais
 INSERT INTO pais (descricao) VALUES ('Brasil');
@@ -252,6 +266,8 @@ INSERT INTO cidade (descricao, estado_id) VALUES ('Cacoal', 1);
 INSERT INTO cidade (descricao, estado_id) VALUES ('Buritis', 1);
 INSERT INTO cidade (descricao, estado_id) VALUES ('São Paulo', 13);
 
+COMMIT TRANSACTION;
+
 -- tipo_logradouro
 INSERT INTO tipo_logradouro (descricao) VALUES ('Rua');
 INSERT INTO tipo_logradouro (descricao) VALUES ('Avenida');
@@ -262,84 +278,790 @@ INSERT INTO tipo_contato (descricao) VALUES ('telefone fixo');
 INSERT INTO tipo_contato (descricao) VALUES ('email');
 
 --tipo_conta
-INSERT INTO tipo_conta (descricao) VALUES ('corrente');
-INSERT INTO tipo_conta (descricao) VALUES ('poupança');
-COMMIT TRANSACTION;
+INSERT INTO tipo_conta (descricao) VALUES ('Conta Corrente');
+INSERT INTO tipo_conta (descricao) VALUES ('Conta Poupança');
 
--- 5 agencias
+--tipo_transacao 
+INSERT INTO tipo_transacao (descricao) VALUES ('Deposito');
+INSERT INTO tipo_transacao (descricao) VALUES ('Saque');
+INSERT INTO tipo_transacao (descricao) VALUES ('Transferência Interna Credito');
+INSERT INTO tipo_transacao (descricao) VALUES ('Transferência Interna Débito');
+INSERT INTO tipo_transacao (descricao) VALUES ('Transferência Externa Credito');
+INSERT INTO tipo_transacao (descricao) VALUES ('Transferência Externa Débito');
+
+
+
+-- INSERT DE 5 AGÊNCIAS
+--1
 BEGIN TRANSACTION;
+
 INSERT INTO cep (descricao) VALUES ('16015291');
 INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
 	   VALUES ('Baguaçu', 282, null, 2, 1, 9);
-INSERT INTO agencia (codigo_ag, endereco_id) VALUES ('00011', 1);
+INSERT INTO agencia (nome, numero, endereco_id) VALUES ('aa','00011', 1);
 INSERT INTO agencia_contato (contato, agencia_id, tipo_contato_id) VALUES ('1839770220', 1, 1);
+
 COMMIT TRANSACTION;
 
+--2
 BEGIN TRANSACTION;
 INSERT INTO cep (descricao) VALUES ('16015292');
 INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
 	   VALUES ('Campo Redondo', 111, null, 1, 2, 1);
-INSERT INTO agencia (codigo_ag, endereco_id) VALUES ('00012', 2);
+INSERT INTO agencia (nome, numero, endereco_id) VALUES ('bb','00012', 2);
 INSERT INTO agencia_contato (contato, agencia_id, tipo_contato_id) VALUES ('1839770226', 2, 1);
 COMMIT TRANSACTION;
 
+--3
 BEGIN TRANSACTION;
 INSERT INTO cep (descricao) VALUES ('16015293');
 INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
 	   VALUES ('Santos Dumont', 333, 'km 3', 3, 3, 2);
-INSERT INTO agencia (codigo_ag, endereco_id) VALUES ('00013', 3);	 
+INSERT INTO agencia (nome, numero, endereco_id) VALUES ('cc','00013', 3);	 
 INSERT INTO agencia_contato (contato, agencia_id, tipo_contato_id) VALUES ('1839770126', 3, 1);
 COMMIT TRANSACTION;
 
+--4
 BEGIN TRANSACTION;
 INSERT INTO cep (descricao) VALUES ('16015294');
 INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
 	   VALUES ('Frei Manuel da Ressurreição', 453, null, 1, 4, 9);
-INSERT INTO agencia (codigo_ag, endereco_id) VALUES ('00014', 4);	 	
+INSERT INTO agencia (nome, numero, endereco_id) VALUES ('dd','00014', 4);	 	
 INSERT INTO agencia_contato (contato, agencia_id, tipo_contato_id) VALUES ('1834770126', 4, 1);
 COMMIT TRANSACTION;
 
+--5
 BEGIN TRANSACTION;
 INSERT INTO cep (descricao) VALUES ('16015295');
 INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
 	   VALUES ('Paraíso', 111, null, 1, 5, 4);
-INSERT INTO agencia (codigo_ag, endereco_id) VALUES ('00015', 5);	 
+INSERT INTO agencia (nome,numero, endereco_id) VALUES ('ee','00015', 5);	 
 INSERT INTO agencia_contato (contato, agencia_id, tipo_contato_id) VALUES ('1839770156', 5, 1);
 COMMIT TRANSACTION;
 
--- 50 contas
+-- 50 contas e 30 clientes 
+--1 conta e 1 cliente.
 BEGIN TRANSACTION;
-INSERT INTO conta (codigo_conta, agencia_id, tipo_conta_id) VALUES ('11111111', 1, 1);	 
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('11111111', '5', 1, 1);	
+INSERT INTO cep (descricao) VALUES ('16615295');
 INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
-	   VALUES ('Frei Manuel da Ressurreição', 1, null, 1, 4, 9);
+	   VALUES ('Frei Manuel da Ressurreição', 1, null, 1, 6, 9);
 INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111111', 'Larissa Ortega', '1994-09-15', 6);	
 INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1939770156', 1, 1);
 INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (1,1);
 COMMIT TRANSACTION;
-
+--2 conta e 2 cliente
 BEGIN TRANSACTION;
-INSERT INTO conta (codigo_conta, agencia_id, tipo_conta_id) VALUES ('22222222', 1, 1);	 
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('22222222','4', 1, 1);	
+INSERT INTO cep (descricao) VALUES ('16615297');
 INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
-	   VALUES ('Fernandópolis', 2, null, 1, 1, 2);
+	   VALUES ('Fernandópolis', 2, null, 1, 7, 2);
 INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111112', 'Marcelo Pastana', '1992-02-22', 7);	
 INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1939770221', 2, 1);
 INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (2,2);
 COMMIT TRANSACTION;
-
+--3 conta e 3 cliente 
 BEGIN TRANSACTION;
-INSERT INTO conta (codigo_conta, agencia_id, tipo_conta_id) VALUES ('33333333', 2, 1);	 
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('33333333','3', 2, 1);	 
+INSERT INTO cep (descricao) VALUES ('16615298');
 INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
-	   VALUES ('Racionais', 1, null, 1, 1, 8);
+	   VALUES ('Racionais', 1, null, 1, 8, 8);
 INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111113', 'Larissa Albanez', '1995-09-15', 8);	
 INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1938770156', 3, 1);
 INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (3,3);
 COMMIT TRANSACTION;
-
+--4 conta  e 4 cliente
 BEGIN TRANSACTION;
-INSERT INTO conta (codigo_conta, agencia_id, tipo_conta_id) VALUES ('11111111', 1, 1);	 
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('11111111','1', 1, 1);	 
+INSERT INTO cep (descricao) VALUES ('16615299');
 INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
-	   VALUES ('Frei Manuel da Ressurreição', 1, null, 1, 4, 9);
+	   VALUES ('Frei Manuel da Ressurreição', 1, null, 1, 9, 9);
 INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111114', 'Joana', '1994-09-10', 9);	
-INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1939770156', 1, 1);
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1939770156', 4, 1);
 INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (4,4);
 COMMIT TRANSACTION;
+--5 conta e 5 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('11111112','2', 2, 2);	 
+INSERT INTO cep (descricao) VALUES ('16025210');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('São Joaquim', 12, null, 2, 10, 3);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111115', 'Joana Tesla', '2000-09-10', 10);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('joaninha@gmail.com', 5, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (5,5);
+COMMIT TRANSACTION;
+
+--6 e 7 conta e 6 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345678','2', 2, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000007','2', 2, 1);	
+INSERT INTO cep (descricao) VALUES ('16025211');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('São João', 13, null, 2, 11, 2);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111116', 'João Medeiros', '2001-10-10', 11);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('joaomeme@gmail.com', 6, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (6,6);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (6,7);
+COMMIT TRANSACTION;
+-- 8 e 9 conta e 7 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345688','2', 2, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000008','2', 2, 1);	
+INSERT INTO cep (descricao) VALUES ('16025218');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('São João dos Pinhais', 18, null, 2, 12, 3);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111117', 'Wenceslau Medeiros', '1995-14-10', 12);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('wewe@gmail.com', 7, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (7,8);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (7,9);
+COMMIT TRANSACTION;
+
+--10 e 11 conta e 8 cliente
+
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345610','2', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000010','2', 3, 1);
+INSERT INTO cep (descricao) VALUES ('16025213');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Paraguai', 13, null, 2, 13, 4);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111108', 'Edileusa Chaves', '1963-10-28', 13);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('edichaves@hotmail.com', 8, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (8,10);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (8,11);
+COMMIT TRANSACTION;
+
+--12 e 13 conta e 9 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345612','4', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000013','4', 3, 1);
+INSERT INTO cep (descricao) VALUES ('16025214');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Jaguarizinho', 14, null, 1, 14, 5);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111109', 'Beatriz Costa', '2000-02-27', 14);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('biazinhalindinha@hotmail.com', 9, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (9,12);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (9,13);
+COMMIT TRANSACTION;
+
+--14 e 15 contas e 10 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345614','1', 1, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000015','1', 1, 1);
+INSERT INTO cep (descricao) VALUES ('16025215');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Rua das flores', 15, null, 1, 15, 1);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111010', 'Fernanda Manente', '1993-02-27', 15);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('fernanda_mm@gmail.com', 10, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (10,14);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (10,15);
+COMMIT TRANSACTION;
+
+--16 e 17 contas e 11 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345616','1', 1, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000017','1', 1, 1);
+INSERT INTO cep (descricao) VALUES ('16025216');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Valdemar Alves', 16, null, 1, 16, 1);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111011', 'Josiel Manente', '1992-04-07', 16);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('jojo_manente@gmail.com', 11, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (11,16);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (11,17);
+COMMIT TRANSACTION;
+
+--18 e 19 contas e 12 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345618','1', 1, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000019','1', 1, 1);
+INSERT INTO cep (descricao) VALUES ('16025217');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Lagoinha', 17, null, 1, 17, 1);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111012', 'Emael Cristão', '1952-07-17', 17);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('eeemael@gmail.com', 12, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (12,18);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (12,19);
+COMMIT TRANSACTION;
+
+--20 e 21 contas e 13 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345620','1', 1, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000021','1', 1, 1);
+INSERT INTO cep (descricao) VALUES ('16025218');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Margarete da  Silva', 18, null, 1, 18, 1);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111013', 'Rochele Benevides', '1992-10-31', 18);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('19891234567', 13, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (13,20);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (13,21);
+COMMIT TRANSACTION;
+
+--22 e 23 contas e 14 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345622','1', 1, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000023','1', 1, 1);
+INSERT INTO cep (descricao) VALUES ('16025219');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Bernardino de Campos', 19, null, 1, 19, 1);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111014', 'Carmem Benevides', '1990-10-31', 19);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('19891234500', 14, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (14,22);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (14,23);
+COMMIT TRANSACTION;
+
+--24 e 25 contas e 15 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345624','1', 1, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000025','1', 1, 1);
+INSERT INTO cep (descricao) VALUES ('16035220');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Euclides da Cunha', 20, null, 1, 20, 1);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111015', 'Carmem Rodrigues', '1990-10-21', 20);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('19891235000', 15, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (15,24);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (15,25);
+COMMIT TRANSACTION;
+
+--26 e 27 contas e 16 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345626','3', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000027','3', 3, 1);
+INSERT INTO cep (descricao) VALUES ('16035221');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Euclides Miragaia', 21, null, 1, 21, 1);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111016', 'Osmar Rodrigues', '1980-11-21', 21);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('19891245000', 16, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (16,26);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (16,27);
+COMMIT TRANSACTION;
+
+--28 e 29 contas  e 17 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345628','3', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000029','3', 3, 1);
+INSERT INTO cep (descricao) VALUES ('16035222');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Marcos Miragaia', 22, null, 1, 22, 5);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111017', 'Marta da Silva', '1981-10-11', 22);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('19891245111', 17, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (17,28);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (17,29);
+COMMIT TRANSACTION;
+
+--30 e 31 contas e 18 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345630','3', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000031','3', 3, 1);
+INSERT INTO cep (descricao) VALUES ('16035223');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Marcos Miranda', 23, null, 1, 23, 5);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111018', 'Lius da Silva', '1982-10-11', 23);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('19891245112', 18, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (18,30);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (18,31);
+COMMIT TRANSACTION;
+
+--32 e 33 contas e 19 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345632','3', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000033','3', 3, 1);
+INSERT INTO cep (descricao) VALUES ('16035224');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Princesa Isabel', 24, null, 1, 24, 5);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111019', 'Carlos da Silva', '1972-10-21', 24);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('carlinhos@gmail.com', 19, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (19,32);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (19,33);
+COMMIT TRANSACTION;
+
+--34 e 35 contas e 20 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345634','3', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000035','3', 3, 1);
+INSERT INTO cep (descricao) VALUES ('1603525');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Princesa Dominique', 25, null, 1, 25, 5);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111020', 'Magda da Silva', '1962-09-16', 25);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('magdasilva@gmail.com', 20, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (20,34);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (20,35);
+COMMIT TRANSACTION;
+
+--36 e 37 contas e 21 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345636','3', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000037','3', 3, 1);
+INSERT INTO cep (descricao) VALUES ('1603526');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Dominique', 26, null, 1, 26, 4);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111021', 'Maria da Silva', '1952-09-16', 26);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('maria123@gmail.com', 21, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (21,36);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (21,37);
+COMMIT TRANSACTION;
+
+--38 e 39 contas e 22 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345638','3', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000039','3', 3, 1);
+INSERT INTO cep (descricao) VALUES ('1603527');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Marcos Antonio', 27, null, 1, 27, 5);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111022', 'Paulo da Silva', '1959-09-23', 27);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('paulinhodoingles@gmail.com', 22, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (22,38);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (22,39);
+COMMIT TRANSACTION;
+
+--40 e 41 contas e 23 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345641','1', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000042','1', 3, 1);
+INSERT INTO cep (descricao) VALUES ('1603528');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Perdro de Toledo', 28, null, 1, 28, 5);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11131111023', 'Pedro de Oliveira', '1984-09-13', 28);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('pedrinhooliver@gmail.com', 23, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (23,40);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (23,41);
+COMMIT TRANSACTION;
+
+--42 e 43 contas e 24 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345643','1', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000044','1', 3, 1);
+INSERT INTO cep (descricao) VALUES ('1603529');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Perdro de Toledo', 29, null, 1, 29, 4);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11131111024', 'Jorge de Oliveira', '1994-10-13', 29);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('jorge123@gmail.com', 24, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (24,42);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (24,43);
+COMMIT TRANSACTION;
+
+--44 e 45 contas e 25 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('12345645','1', 3, 2);	
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('00000046','1', 3, 1);
+INSERT INTO cep (descricao) VALUES ('1603530');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Governador de Toledo', 30, null, 1, 30, 4);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11131111025', 'Beatriz de Oliveira', '1982-11-13', 30);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('beatrizo@gmail.com', 25, 2);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (25,44);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (25,45);
+COMMIT TRANSACTION;
+
+--46 conta e 26 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('11111146', '5', 1, 1);	
+INSERT INTO cep (descricao) VALUES ('16615231');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Paulista', 31, null, 2, 31, 9);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111126', 'Larissa da Cruz', '1994-08-24', 31);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1939770199', 26, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (26,46);
+COMMIT TRANSACTION;
+
+--47 conta e 27 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('11111147', '5', 1, 1);	
+INSERT INTO cep (descricao) VALUES ('16615232');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Orozimbo Maia', 32, null, 2, 32, 9);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111127', 'Rafael da Cruz', '1995-12-24', 32);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1839770199', 27, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (27,47);
+COMMIT TRANSACTION;
+
+--48 conta e 28 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('11111148', '5', 1, 1);	
+INSERT INTO cep (descricao) VALUES ('16615233');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('Garão Maia', 33, null, 2, 33, 9);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111128', 'Lucimary da Cruz', '1973-07-07', 33);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1839771233', 28, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (28,48);
+COMMIT TRANSACTION;
+
+--49 conta e 29 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('11111149', '5', 1, 1);	
+INSERT INTO cep (descricao) VALUES ('16615234');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('São Judas Tadeu', 34, null, 2, 34, 9);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111129', 'Luciana da Cruz', '1970-08-07', 34);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1836771233', 29, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (29,49);
+COMMIT TRANSACTION;
+
+--50 conta e 30 cliente
+BEGIN TRANSACTION;
+INSERT INTO conta (numero, digito, agencia_id, tipo_conta_id) VALUES ('11111150', '5', 1, 1);	
+INSERT INTO cep (descricao) VALUES ('16615235');
+INSERT INTO endereco (logradouro, numero, complemento, tipo_logradouro_id, cep_id, cidade_id)
+	   VALUES ('São Jorge', 35, null, 2, 35, 9);
+INSERT INTO cliente (cpf, nome, data_nascimento, endereco_id) VALUES ('11111111130', 'Vanessa Paes da Cruz', '1979-08-01', 35);	
+INSERT INTO cliente_contato (contato, cliente_id, tipo_contato_id) VALUES ('1836771273', 30, 1);
+INSERT INTO conta_cliente (cliente_id, conta_id) VALUES (30,50);
+COMMIT TRANSACTION;
+
+
+
+/*Insert das transações*/
+--1 e 2
+BEGIN TRANSACTION;
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-02-02 02:12:24',-20.00, 2, 4, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-02-02 02:12:24',20.00, 1, 3, 1);
+COMMIT TRANSACTION;
+
+--3 e 4
+BEGIN TRANSACTION;
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-03-03 03:37:23',-30.00, 3, 4, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-03-03 03:37:23',30.00, 4, 3, 3);
+COMMIT TRANSACTION;
+
+--5 e 6
+BEGIN TRANSACTION;
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-03-03 03:37:26',-32.60, 5, 4, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-03-03 03:37:26',32.60, 6, 3, 5);
+COMMIT TRANSACTION;
+
+--7 e 8
+BEGIN TRANSACTION;
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-02-10 09:37:26',-100.45, 7, 4, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-02-10 09:37:26',100.45, 8, 3, 7);
+COMMIT TRANSACTION;
+
+--9 e 10
+BEGIN TRANSACTION;
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-02-11 19:23:00',-210.25, 8, 4, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-02-11 19:23:00',210.25, 9, 3, 9);
+COMMIT TRANSACTION;
+
+--11 e 12
+BEGIN TRANSACTION;
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-03-11 17:25:10',-2111.25, 10, 4, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-03-11 17:25:10',2111.25, 11, 3, 11);
+COMMIT TRANSACTION;
+
+--13 e 14
+BEGIN TRANSACTION;
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-02-11 19:23:00',-10.25, 12, 4, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-02-11 19:23:00',10.25, 13, 3, 12);
+COMMIT TRANSACTION;
+
+--15 à 150
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-02 19:12:24',-12.00, 1, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-02-03 20:37:23',245.00, 2, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-12-31 04:14:44',-20.00, 3, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-03-02 12:12:24',-25.00, 4, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-04-03 13:37:23',40.00, 5, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-05-01 04:14:44',100.00, 6, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2019-06-01 01:17:14',1000.00, 7, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-07-02 02:12:24',-20.00, 8, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-03 03:37:23',20.00, 9, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-09-31 04:14:44',-20.50, 10, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-02 19:12:24',-20.50, 11, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-02-03 20:37:23',20.00, 12, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-12-31 04:14:44',-20.55, 13, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-03-02 12:12:24',-25.00, 14, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-04-03 13:37:23',40.00, 15, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-05-01 04:14:44',100.15, 16, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2019-06-01 01:17:14',1000.06, 17, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-07-02 02:12:24',-27.00, 18, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-03 03:37:23',20.00, 19, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-09-31 04:14:44',-56.00, 20, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2000-01-02 19:12:24',-12.00, 21, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2001-02-03 20:37:23',245.00, 22, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2002-12-31 04:14:44',-20.00, 23, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2000-03-02 12:12:24',-25.00, 24, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2001-04-03 13:37:23',40.00, 25, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-05-01 04:14:44',100.00, 26, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2009-06-01 11:17:14',1000.00, 27, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-07-02 12:12:24',-20.00, 28, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-03 03:34:33',20.00, 29, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-09-31 17:14:44',-25.50, 1, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-11-02 19:12:24',-35.50, 11, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-12-03 20:37:23',20.00, 12, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-12-31 04:14:44',-20.36, 13, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-03-02 12:12:24',-25.47, 14, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-04-03 13:37:23',40.00, 15, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-05-01 04:14:44',1023.15, 16, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2019-06-01 01:17:14',1400.04, 17, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-07-02 02:12:24',-27.00, 18, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-03 03:37:23',20.12, 19, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-06-31 04:14:44',-56.00, 20, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-02 19:10:24',-13.00, 1, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-03-03 18:37:23',25.00, 2, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-12-31 04:20:44',-20.00, 3, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-03-02 12:12:24',-25.00, 4, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-04-03 13:12:23',40.00, 5, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-05-01 04:12:44',100.00, 6, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2019-06-01 01:12:14',1000.00, 7, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-07-02 02:14:24',-20.00, 8, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-03 03:14:23',20.00, 9, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-09-31 04:16:44',-20.50, 10, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-02 19:16:24',-20.50, 11, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-02-03 20:36:23',20.00, 12, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-12-31 04:36:44',-20.55, 13, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-03-02 12:36:24',-25.00, 14, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-04-03 13:37:23',40.00, 15, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-05-01 04:37:44',100.15, 16, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2019-06-01 12:36:14',1000.06, 11, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-07-02 12:12:24',-27.00, 10, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-03 12:37:23',20.00, 9, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-09-31 12:14:44',-56.00, 8, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2000-02-02 19:12:24',-12.00, 7, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2001-03-03 20:37:23',245.00, 6, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2002-04-31 04:14:44',-20.00, 5, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2000-05-02 12:12:24',-25.00, 4, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2001-06-03 13:37:23',40.00, 3, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-07-01 04:14:44',100.00, 2, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2009-08-01 11:17:14',1000.00, 1, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-09-02 12:12:24',-20.00, 40, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-20 03:34:33',20.00, 41, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-09-21 17:14:44',-25.50, 42, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-11-21 19:12:24',-35.50, 43, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-12-03 20:37:23',20.00, 44, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-01-31 04:14:44',-20.36, 45, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-02 12:13:24',-25.47, 46, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-01-03 13:13:23',40.00, 47, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-01-01 04:13:44',1023.15, 48, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2019-01-01 01:13:14',1400.04, 49, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-02 02:13:24',-27.00, 50, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-01-03 03:13:23',20.12, 2, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-01-31 04:13:44',-56.00, 1, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-02 19:13:24',-12.00, 1, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-02-03 20:37:23',245.00, 2, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-12-31 04:13:44',-20.00, 3, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-03-02 12:13:24',-25.00, 4, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-04-03 13:13:23',40.00, 5, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-05-01 04:13:44',100.00, 6, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2019-06-01 01:13:14',1000.00, 7, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-07-02 02:13:24',-20.00, 8, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-03 03:13:23',20.00, 9, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-09-31 04:13:44',-20.50, 25, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-02 19:12:24',-20.50, 25, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-02-03 20:37:23',20.00, 25, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-12-31 04:14:44',-20.55, 25, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-03-02 12:12:24',-25.00, 25, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-04-03 13:37:23',40.00, 25, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-05-01 04:14:44',100.15, 16, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2019-06-01 15:17:14',1000.06, 17, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-07-02 15:12:24',-27.00, 18, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-03 15:37:23',20.00, 19, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-09-31 15:14:44',-56.00, 20, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2000-01-02 15:12:24',-12.00, 21, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2001-02-03 15:37:23',245.00, 22, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2002-12-31 15:14:44',-20.00, 23, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2000-03-02 12:12:24',-25.00, 24, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2001-04-03 13:37:23',40.00, 25, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-05-01 04:14:44',100.00, 26, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2009-06-01 11:17:14',1000.00, 27, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-07-02 12:12:24',-20.00, 28, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-03 03:34:33',20.00, 29, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-09-31 17:14:44',-25.50, 1, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-11-02 19:12:24',-35.50, 11, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-12-03 20:37:23',20.00, 12, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-12-31 04:14:44',-20.36, 13, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-03-02 12:12:24',-25.47, 14, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-04-03 13:37:23',40.00, 15, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-05-01 04:14:44',1023.15, 16, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2019-06-01 01:17:14',1400.04, 17, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-07-02 02:12:24',-27.00, 18, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-08-03 03:37:23',20.12, 19, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-04-31 04:14:44',-56.00, 2, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-03-02 19:10:24',-13.00, 1, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-02-03 18:37:23',25.00, 20, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-01-31 04:20:44',-20.00, 3, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-02-02 12:12:24',-25.00, 5, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-03-03 13:12:23',40.00, 4, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-04-02 04:12:44',100.10, 6, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2023-11-21 19:12:24',-35.10, 43, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-12-03 20:37:23',20.56, 44, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-31 04:14:44',-2000.36, 45, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-01-02 12:12:24',-2000.47, 46, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-03 13:37:23',2000.00, 47, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2019-01-01 04:14:44',2000.15, 48, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2018-01-01 01:17:14',2000.04, 49, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2022-01-02 02:12:24',-27.00, 50, 2, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2021-01-03 03:37:23',20.12, 45, 1, null);
+INSERT INTO transacao (data_hora, valor, conta_id, tipo_transacao_id, transacao_origem_id) VALUES ('2020-01-31 04:14:44',-56.00, 45, 2, null);
+
+
+
+/*Consultas*/
+
+-- 01 - Listar nome e número das agências.
+SELECT nome, numero FROM agencia;
+
+-- 02 - Listar ID, número, digíto das contas.
+SELECT id, numero, digito FROM conta;
+
+-- 03 - Listar ID, número, digíto e tipo da conta.
+SELECT c.id, c.numero, c.digito, tc.descricao
+FROM conta c
+	INNER JOIN tipo_conta tc on tc.id = c.tipo_conta_id
+;
+-- 04 - Listar id, número, digito e tipo da conta. Deve ser listado apenas para as contas do tipo 'Conta Corrente'.
+SELECT c.id, c.numero, c.digito, tc.descricao
+FROM conta c
+	INNER JOIN tipo_conta tc on tc.id = c.tipo_conta_id
+WHERE tc.descricao = 'Conta Corrente'
+;
+-- 05 - Listar cliente(nome, cpf), conta (número) dos clientes.
+SELECT cl.nome, cl.cpf, c.numero
+FROM conta_cliente clc
+	LEFT JOIN conta c on c.id = clc.conta_id
+	LEFT JOIN cliente cl on cl.id = clc.cliente_id
+ORDER BY nome
+;
+
+-- 06 - Listar cliente(nome, cpf), conta(agência, número e digito) dos clientes.
+SELECT cl.nome, cl.cpf, a.numero as agencia, c.numero as conta, c.digito
+FROM conta_cliente clc
+	LEFT JOIN conta c on c.id = clc.conta_id
+	LEFT JOIN agencia a on a.id = c.agencia_id
+	LEFT JOIN cliente cl on cl.id = clc.cliente_id
+ORDER BY nome
+;
+
+-- 07 - Listar cliente(nome, cpf), conta(agência, número e dígito). 
+--Deve ser listado apenas dos clientes que residem na cidade de 'São Paulo'.
+SELECT cl.nome, cl.cpf, a.numero as agencia, c.numero as conta, c.digito
+FROM conta_cliente clc
+	LEFT JOIN conta c on c.id = clc.conta_id
+	LEFT JOIN agencia a on a.id = c.agencia_id
+	LEFT JOIN cliente cl on cl.id = clc.cliente_id
+	INNER JOIN endereco e on e.id = cl.endereco_id
+	INNER JOIN cidade cid on cid.id = e.cidade_id
+WHERE cid.descricao = 'São Paulo'
+ORDER BY nome
+;
+
+-- 08 - Listar cliente(nome, cpf), quantidade de contas dos clientes.
+SELECT cl.nome, cl.cpf, COUNT(c.id) as quantidade_contas
+FROM conta_cliente clc
+	LEFT JOIN conta c on c.id = clc.conta_id
+	LEFT JOIN agencia a on a.id = c.agencia_id
+	LEFT JOIN cliente cl on cl.id = clc.cliente_id
+GROUP BY cl.nome, cl.cpf
+ORDER BY nome
+;
+-- 09 -Listar conta(agência, número e digito), operação(tipo, data, valor) das contas. 
+-- Nesta listagem deve ser considerado apenas as operações do ano de 2022.
+SELECT a.numero as agencia, c.numero as conta, c.digito, tt.descricao as tipo_transacao, t.data_hora, t.valor
+FROM agencia a
+	 LEFT JOIN conta c on c.agencia_id = a.id 
+	 LEFT JOIN transacao t on t.conta_id = c.id
+	 INNER JOIN tipo_transacao tt on tt.id = t.tipo_transacao_id
+WHERE 
+	date_part('year', t.data_hora) = 2022
+ORDER BY a.numero
+;
+
+-- 10 - Listar a conta e a quantidade de operações que ocorrem no ano de 2022.
+SELECT c.numero as conta, COUNT(t.id) as Qtd_op_2022
+FROM conta c
+	 LEFT JOIN transacao t on t.conta_id = c.id
+WHERE 
+	date_part('year', t.data_hora) = 2022
+GROUP BY c.numero
+ORDER BY c.numero
+;
+
+-- 11 - Listar as contas independente de ter tido ou não operações. 
+-- Porém, para as que tiveram, deve ser carregado as operações das mesmas.
+SELECT c.numero as conta, c.digito, tt.descricao as tipo_transacao, t.data_hora, t.valor
+FROM conta c
+	 LEFT JOIN transacao t on t.conta_id = c.id
+	 LEFT JOIN tipo_transacao tt on tt.id = t.tipo_transacao_id
+ORDER BY c.numero
+;
+-- 12 - Listar todas as contas que não tiveram operação no ano de 2022.
+SELECT distinct c.numero
+FROM conta c 
+WHERE c.id NOT IN (
+	SELECT t.conta_id
+	FROM transacao t
+	WHERE 
+		date_part('year', t.data_hora) = 2022
+	)
+;
+
+SELECT distinct cl.nome, cl.cpf, a.numero as agencia, c.numero as conta, c.digito
+FROM agencia a
+	 LEFT JOIN conta c on c.agencia_id = a.id 
+	 LEFT JOIN transacao t on t.conta_id = c.id
+	 LEFT JOIN tipo_transacao tt on tt.id = t.tipo_transacao_id
+	 LEFT JOIN conta_cliente clc on clc.conta_id = c.id 
+	 LEFT JOIN cliente cl on cl.id = clc.cliente_id 
+WHERE c.id NOT IN (
+	SELECT t2.conta_id
+	FROM transacao t2
+	WHERE 
+		date_part('year', t2.data_hora) = 2022
+	)
+;
+
+
+
+-- 13 - Listar cliente(nome, cpf), conta(agência, número, dígito) e também o saldo atual.
+SELECT cl.nome, cl.cpf, a.numero as agencia, c.numero as conta, c.digito, SUM(t.valor) AS saldo
+FROM agencia a
+	 LEFT JOIN conta c on c.agencia_id = a.id 
+	 LEFT JOIN transacao t on t.conta_id = c.id
+	 LEFT JOIN tipo_transacao tt on tt.id = t.tipo_transacao_id
+	 LEFT JOIN conta_cliente clc on clc.conta_id = c.id 
+	 LEFT JOIN cliente cl on cl.id = clc.cliente_id
+GROUP BY cl.nome, cl.cpf, a.numero, c.numero, c.digito
+ORDER BY cl.nome, cl.cpf, a.numero, c.numero, c.digito
+;
+
+
+-- 14 - Listar cliente(nome e cpf), conta(agência, número e dígito) e também o saldo. 
+-- Neste exercício deve ser listador apenas os clientes com saldo negativo.
+SELECT cl.nome, cl.cpf, a.numero as agencia, c.numero as conta, c.digito, SUM(t.valor) AS saldo
+FROM agencia a
+	 LEFT JOIN conta c on c.agencia_id = a.id 
+	 LEFT JOIN transacao t on t.conta_id = c.id
+	 LEFT JOIN tipo_transacao tt on tt.id = t.tipo_transacao_id
+	 LEFT JOIN conta_cliente clc on clc.conta_id = c.id 
+	 LEFT JOIN cliente cl on cl.id = clc.cliente_id
+GROUP BY cl.nome, cl.cpf, a.numero, c.numero, c.digito
+HAVING SUM(t.valor) < 0
+ORDER BY cl.nome, cl.cpf, a.numero, c.numero, c.digito
+;
+
+-- 15 - Listar as operações das contas. Na listagem deve conter a conta (agencia, número e digito)
+--, tipo da operação, valor, data, operação de origem (quando existir).
+SELECT a.numero as agencia, c.numero as conta, c.digito, tt.descricao, t.valor, t.data_hora, t.transacao_origem_id
+FROM agencia a
+	 LEFT JOIN conta c on c.agencia_id = a.id 
+	 INNER JOIN transacao t on t.conta_id = c.id
+	 INNER JOIN tipo_transacao tt on tt.id = t.tipo_transacao_id
+ORDER BY a.numero , c.numero
+;
+-- 16 - Crie uma view para exibir o saldo das contas.
+CREATE VIEW conta_saldo AS 
+	SELECT cl.nome, cl.cpf, a.numero as agencia, c.numero as conta, c.digito, SUM(t.valor) AS saldo
+	FROM agencia a
+		 LEFT JOIN conta c on c.agencia_id = a.id 
+		 LEFT JOIN transacao t on t.conta_id = c.id
+		 LEFT JOIN tipo_transacao tt on tt.id = t.tipo_transacao_id
+		 LEFT JOIN conta_cliente clc on clc.conta_id = c.id 
+		 LEFT JOIN cliente cl on cl.id = clc.cliente_id
+	GROUP BY cl.nome, cl.cpf, a.numero, c.numero, c.digito
+	ORDER BY cl.nome, cl.cpf, a.numero, c.numero, c.digito
+;
+SELECT * FROM conta_saldo
+-- 17 - Crie uma view para exibir o histórico de transações.
+CREATE VIEW vw_historico_transacao AS
+	SELECT c.numero as conta, c.digito, tt.descricao as tipo_transacao, t.data_hora, t.valor
+	FROM conta c
+		 INNER JOIN transacao t on t.conta_id = c.id
+		 INNER JOIN tipo_transacao tt on tt.id = t.tipo_transacao_id
+	ORDER BY t.data_hora
+;
+SELECT * FROM vw_historico_transacao
